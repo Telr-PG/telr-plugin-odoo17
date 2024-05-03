@@ -1,4 +1,4 @@
-<?xml version="2.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo noupdate="1">
     <record id="payment_acquirer_telr" model="payment.provider">
         <field name="name">Telr Payment</field>
