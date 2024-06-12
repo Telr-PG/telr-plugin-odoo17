@@ -27,6 +27,6 @@ Note: The payment provider depends on other add-ons like "Generic - Accounting",
 
 	Before processing live transactions, ensure that the IP of your server system are updated into the Payment Page V2 configuration in the Telr Merchant Administration System.
 
-## License
+### License ###
 
 This repository is available under the [MIT license](LICENSE).
