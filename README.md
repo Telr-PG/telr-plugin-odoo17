@@ -29,4 +29,4 @@ Note: The payment provider depends on other add-ons like "Generic - Accounting",
 
 ### License ###
 
-Copyright © 2023 Telr. All rights reserved. See LICENSE for license details.
+This repository is available under the [MIT license](LICENSE).
