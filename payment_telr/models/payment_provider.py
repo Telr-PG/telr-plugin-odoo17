@@ -19,11 +19,11 @@ class PaymentProvider(models.Model):
 #=== COMPUTE METHODS ===#
     @api.depends('code')
     def _compute_feature_support_fields(self):
-        """ Override of `payment` to enable additional features. """
+        """ Override of `payment` to enable additional features. """     
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == 'telr').update({
             'support_manual_capture': 'full_only',
-            'support_refund': 'partial'
+            'support_refund': 'partial',
         })
         
     def _get_default_payment_method_codes(self):

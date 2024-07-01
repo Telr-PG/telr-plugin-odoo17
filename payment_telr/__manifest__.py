@@ -15,6 +15,7 @@
     'data': [
         'views/payment_telr_templates.xml',
         'views/payment_provider_views.xml',
+        'data/payment_method_data.xml',
         'data/payment_provider_data.xml'
     ],
     
@@ -26,4 +27,5 @@
             'payment_telr/static/src/js/**/*',
         ],
     },
+    'license': 'LGPL-3',
 }

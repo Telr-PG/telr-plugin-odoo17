@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-
 import xml.etree.ElementTree as ET
 import logging
+import pprint
 import requests
 from werkzeug import urls
 from decimal import *
@@ -10,7 +10,7 @@ import socket
 import ssl
 
 from odoo import _, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.addons.payment_telr.controllers.main import TelrController
 
 
@@ -304,7 +304,21 @@ class PaymentTransaction(models.Model):
                 self._set_error(
                     "Telr: " + message
                 )
-              
+
+        elif 'state' in notification_data and notification_data['state'] == 'subscription':
+
+            status = notification_data['status']
+            message = notification_data['message']
+            tranref = notification_data['tranref']
+
+            if status == 'A':
+                self._set_done()
+                self.write({'provider_reference': tranref})
+            else:
+                self._set_error(
+                    "Telr: " + message
+                )
+
         else:
         
             data = notification_data.get('order')
@@ -380,14 +394,14 @@ class PaymentTransaction(models.Model):
         self.ensure_one()
         self._ensure_provider_is_not_disabled()
 
-        refund_response = self._telr_remote_xml_req(amount_to_refund, 'refund', 'Initiate refund request')
+        refund_response = self._telr_remote_xml_req(amount_to_refund, 'refund', 'Initiate refund request', 'ecom')
         
         responseXml = ET.fromstring(refund_response)
         status = responseXml.find('auth').find('status').text
         message = responseXml.find('auth').find('message').text
         tranref = responseXml.find('auth').find('tranref').text
         
-        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state':'refund'}
+        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state': 'refund'}
         refund_tx._handle_notification_data('telr', notification_data)       
         refund_tx._log_sent_message()
         
@@ -412,14 +426,14 @@ class PaymentTransaction(models.Model):
                 )
             )
         
-        capture_response = self._telr_remote_xml_req(round(float(self.amount), 2), 'capture', 'Initiate capture request')
+        capture_response = self._telr_remote_xml_req(round(float(self.amount), 2), 'capture', 'Initiate capture request', 'ecom')
         
         responseXml = ET.fromstring(capture_response)
         status = responseXml.find('auth').find('status').text
         message = responseXml.find('auth').find('message').text
         tranref = responseXml.find('auth').find('tranref').text
         
-        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state':'capture'}
+        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state': 'capture'}
         self._handle_notification_data('telr', notification_data)
 
     def _send_void_request(self):
@@ -440,7 +454,7 @@ class PaymentTransaction(models.Model):
                 )
             )
         
-        void_response = self._telr_remote_xml_req(round(float(self.amount), 2), 'void', 'Initiate void request')
+        void_response = self._telr_remote_xml_req(round(float(self.amount), 2), 'void', 'Initiate void request', 'ecom')
 
         responseXml = ET.fromstring(void_response)
         status = responseXml.find('auth').find('status').text
@@ -450,23 +464,21 @@ class PaymentTransaction(models.Model):
         notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state':'void'}
         self._handle_notification_data('telr', notification_data)
 
-    def _telr_remote_xml_req(self, refund_amount, request_type, refund_description):
+    def _telr_remote_xml_req(self, tran_amount, request_type, request_description, request_class):
         url = "https://secure.telr.com/gateway/remote.xml"
         
         store_id = int(self.provider_id.telr_merchant_id)
-        """auth_key = self.provider_id.telr_api_key"""
-        """auth_key = 'BG88b#FBFpX^xSzw'"""
         auth_key = self.provider_id.telr_remote_key
         cart_id = self.reference
         test_method = 0 if self.provider_id.state == 'enabled' else 1
-        refund_currency = self.currency_id.name
+        tran_currency = self.currency_id.name
         
         if request_type == 'refund':
             refund_reference = self.provider_reference
         else:
             refund_reference = self.telr_order_id
            
-        refund_reference = self.provider_reference
+        tran_reference = self.provider_reference
         
         xml_payload = """ 
         <?xml version='1.0' encoding='UTF-8'?>
@@ -475,26 +487,27 @@ class PaymentTransaction(models.Model):
             <key>{auth_key}</key>
             <tran>
                 <type>{request_type}</type>
-                <class>ecom</class>
+                <class>{request_class}</class>
                 <cartid>{cart_id}</cartid>
-                <description>{refund_description}</description>
+                <description>{request_description}</description>
                 <test>{test_method}</test>
-                <currency>{refund_currency}</currency>
-                <amount>{refund_amount}</amount>
-                <ref>{refund_reference}</ref>
+                <currency>{tran_currency}</currency>
+                <amount>{tran_amount}</amount>
+                <ref>{tran_reference}</ref>
             </tran>
         </remote>        
         """
         
         formatted_payload = xml_payload.format(store_id=store_id, 
                             auth_key=auth_key, 
-                            request_type=request_type, 
+                            request_type=request_type,
+                            request_class=request_class,
                             cart_id=cart_id, 
-                            refund_description=refund_description, 
+                            request_description=request_description,
                             test_method=test_method,
-                            refund_currency=refund_currency,
-                            refund_amount=refund_amount,
-                            refund_reference=refund_reference,
+                            tran_currency=tran_currency,
+                            tran_amount=tran_amount,
+                            tran_reference=tran_reference,
                             )
         
         headers = {'content-type':'application/xml'}
@@ -507,5 +520,24 @@ class PaymentTransaction(models.Model):
         with socket.create_connection((hostname, 443)) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 return ssock.version()
-                
-                
+
+    def _send_payment_request(self):
+        super()._send_payment_request()
+        if self.provider_code != 'telr':
+            return
+
+        if self.provider_id.telr_remote_key == 0:
+            raise UserError("Telr: " + _("Void request do not initiate because Remote API Authentication Key is blank in Telr payment configuration"))
+
+        self.ensure_one()
+        self._ensure_provider_is_not_disabled()
+
+        response = self._telr_remote_xml_req(round(float(self.amount), 2), 'sale', 'Initiate recurring payment request', 'cont')
+
+        responseXml = ET.fromstring(response)
+        status = responseXml.find('auth').find('status').text
+        message = responseXml.find('auth').find('message').text
+        tranref = responseXml.find('auth').find('tranref').text
+
+        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state': 'subscription'}
+        self._handle_notification_data('telr', notification_data)
