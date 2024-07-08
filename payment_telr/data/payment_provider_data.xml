@@ -20,10 +20,6 @@
             <![CDATA[
 <p>You will be redirected to the Telr payment page after clicking on payment button.</p>]]>
         </field>
-		<field name="payment_method_ids"
-               eval="[Command.set([
-                         ref('payment_telr.payment_method_telr'),
-                     ])]"
-        />
+        <field name="payment_method_ids"  eval="[Command.set([ref('payment_telr.payment_method_telr'),])]"/>
     </record>
 </odoo>

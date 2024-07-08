@@ -23,7 +23,7 @@ class PaymentProvider(models.Model):
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == 'telr').update({
             'support_manual_capture': 'full_only',
-            'support_refund': 'partial',
+            'support_refund': 'partial'
         })
         
     def _get_default_payment_method_codes(self):

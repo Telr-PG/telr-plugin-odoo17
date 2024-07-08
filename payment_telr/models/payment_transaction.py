@@ -401,7 +401,7 @@ class PaymentTransaction(models.Model):
         message = responseXml.find('auth').find('message').text
         tranref = responseXml.find('auth').find('tranref').text
         
-        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state': 'refund'}
+        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state':'refund'}
         refund_tx._handle_notification_data('telr', notification_data)       
         refund_tx._log_sent_message()
         
@@ -433,7 +433,7 @@ class PaymentTransaction(models.Model):
         message = responseXml.find('auth').find('message').text
         tranref = responseXml.find('auth').find('tranref').text
         
-        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state': 'capture'}
+        notification_data = {'status': status, 'message': message, 'tranref': tranref, 'state':'capture'}
         self._handle_notification_data('telr', notification_data)
 
     def _send_void_request(self):
