@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo noupdate="1">
-    <record id="payment_acquirer_telr" model="payment.provider">
+    <record id="payment_provider_telr" model="payment.provider">
         <field name="name">Telr Payment</field>
 		<field name="support_manual_capture"></field>
         <field name="image_128" type="base64" file="payment_telr/static/src/img/telr_icon.png" />
@@ -20,6 +20,6 @@
             <![CDATA[
 <p>You will be redirected to the Telr payment page after clicking on payment button.</p>]]>
         </field>
-		
+        <field name="payment_method_ids"  eval="[Command.set([ref('payment_telr.payment_method_telr'),])]"/>
     </record>
 </odoo>

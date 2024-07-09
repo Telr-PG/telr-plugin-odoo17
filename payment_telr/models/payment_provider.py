@@ -19,7 +19,7 @@ class PaymentProvider(models.Model):
 #=== COMPUTE METHODS ===#
     @api.depends('code')
     def _compute_feature_support_fields(self):
-        """ Override of `payment` to enable additional features. """
+        """ Override of `payment` to enable additional features. """     
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == 'telr').update({
             'support_manual_capture': 'full_only',
