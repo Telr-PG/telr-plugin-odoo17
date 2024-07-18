@@ -14,9 +14,10 @@ paymentForm.include({
          * @param {object} processingValues - The processing values of the transaction
          * @return {Promise}
          */
-        _processDirectFlow: function (providerCode, paymentOptionId, paymentMethodCode, processingValues) {
+        async  _processDirectFlow(providerCode, paymentOptionId, paymentMethodCode, processingValues) {
             if (providerCode !== 'telr') {
-                return this._super(...arguments);
+                await this._super(...arguments); 
+                return;
             }
 
             const telr_payment_token = document.getElementById('telr_payment_token').value;
@@ -42,10 +43,11 @@ paymentForm.include({
          * @return {Promise}
          */
         
-		_processRedirectFlow: (providerCode, paymentOptionId, paymentMethodCode, processingValues)=>{
+		async _processRedirectFlow(providerCode, paymentOptionId, paymentMethodCode, processingValues) {
 			
             if (providerCode !== 'telr') {
-                return this._super(...arguments);
+                await this._super(...arguments); 
+                return;
             }
 			
 			const flowtype = processingValues.ivp_framed
@@ -72,9 +74,10 @@ paymentForm.include({
          * @param {string} flow - The online payment flow of the selected payment option
          * @return {Promise}
          */
-		_prepareInlineForm: function (providerId, providerCode, paymentOptionId, paymentMethodCode, flow) { 
+		async _prepareInlineForm(providerId, providerCode, paymentOptionId, paymentMethodCode, flow) { 
             if (providerCode !== 'telr') {
-                return this._super(...arguments);
+                await this._super(...arguments); 
+                return;
             } 
 			
 			$('#inlineFrame').empty();
